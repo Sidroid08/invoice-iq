@@ -24,6 +24,13 @@ jobs:
           python-version-file: ".python-version"  # pinned to 3.11 (matches local venv)
           cache: "pip"
 
+      # Cache the pinned embedding model so the RAG test doesn't re-download it.
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2
+
       - name: Install (project + dev tooling)
         run: |
           python -m pip install --upgrade pip

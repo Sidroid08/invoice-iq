@@ -28,6 +28,8 @@ dependencies = [
     "reportlab==4.5.1",
     "torch==2.12.0",
     "numpy==2.4.6",
+    "sentence-transformers==5.5.1",
+    "chromadb==1.5.9",
 ]
 
 [project.optional-dependencies]
@@ -83,9 +85,19 @@ show_error_codes = true
 files = ["src", "tests", "config", "scripts"]
 
 [[tool.mypy.overrides]]
-# Third-party libs without type stubs (treated as Any).
-module = ["pdfplumber.*", "reportlab.*", "fitz", "pytesseract", "anthropic.*"]
+# Third-party libs we treat as untyped (no stubs, or stubs we don't type against).
+# follow_imports=skip makes even py.typed packages (chromadb) resolve to Any.
+module = [
+    "pdfplumber.*",
+    "reportlab.*",
+    "fitz",
+    "pytesseract",
+    "anthropic.*",
+    "sentence_transformers.*",
+    "chromadb.*",
+]
 ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 minversion = "8.0"

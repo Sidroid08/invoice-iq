@@ -20,6 +20,16 @@ $ErrorActionPreference = 'Stop'
 $venvPy = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
 $py = if (Test-Path $venvPy) { $venvPy } else { 'python' }
 
+# This machine intercepts TLS; point SSL-using libs (httpx/huggingface, requests)
+# at the exported Windows CA bundle so model downloads work. Local-only; on a
+# normal machine the bundle is absent and this is a no-op. See env memory note.
+$caBundle = Join-Path $PSScriptRoot 'win-ca-bundle.pem'
+if (Test-Path $caBundle) {
+    $env:SSL_CERT_FILE = $caBundle
+    $env:REQUESTS_CA_BUNDLE = $caBundle
+    $env:CURL_CA_BUNDLE = $caBundle
+}
+
 function Invoke-Step($cmd) {
     Write-Host "> $cmd" -ForegroundColor Cyan
     Invoke-Expression $cmd

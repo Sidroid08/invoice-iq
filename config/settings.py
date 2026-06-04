@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     vector_store: ProviderMode = "local"
     classifier_backend: ClassifierBackend = "local"
 
+    # --- RAG (Phase 4) ---
+    # Pinned so CI and local machines fetch the identical embedding model.
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    rag_top_k: int = Field(default=4, ge=1, le=50)
+
     # --- Optional LLM extraction path (Phase 2) ---
     enable_llm_extraction: bool = False
     anthropic_api_key: str | None = None

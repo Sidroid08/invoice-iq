@@ -13,6 +13,10 @@ reportlab==4.5.1
 # CUDA wheel: pip install torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
 torch==2.12.0
 numpy==2.4.6
+# Phase 4: RAG (embeddings + vector store). First use downloads the pinned
+# embedding model all-MiniLM-L6-v2 (~80 MB) to ~/.cache/huggingface.
+sentence-transformers==5.5.1
+chromadb==1.5.9
 # Phase 2 optional extras (NOT installed by default):
 #   OCR fallback (also needs Tesseract binary):  pip install -e ".[ocr]"
 #   LLM extraction path (needs ANTHROPIC_API_KEY): pip install -e ".[llm]"

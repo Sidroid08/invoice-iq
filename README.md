@@ -55,7 +55,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 1 | Pydantic schemas + typed settings | done |
 | 2 | Ingestion + extraction (local) | done |
 | 3 | PyTorch classifier (trained) | done |
-| 4 | RAG pipeline | planned |
+| 4 | RAG pipeline (embed + Chroma + Q&A) | done |
 | 5 | Agentic LangGraph workflow | planned |
 | 6 | FastAPI serving + monitoring + Docker/CI | planned |
 | 7 | GCP swap-ins (Vertex endpoint first) | planned |
@@ -164,6 +164,42 @@ _Last trained: 2026-06-04T18:05:38+00:00_
 > This block is auto-generated from `models/metrics.json` by
 > `scripts/sync_metrics_readme.py` (run in CI), so the numbers shown are the real,
 > last-trained results — never hand-edited.
+
+---
+
+## RAG pipeline (Phase 4)
+
+Extracted invoices are indexed and made queryable, each stage behind a `Protocol`
+for the Phase 7 Vertex swap:
+
+```
+Invoice ─► chunk_invoice ─► EmbeddingProvider ─► VectorStore ─► ask() ─► Answer + citations
+           (summary /        minilm (semantic)    Chroma          retrieve top-k,
+            vendor /          hashing (tests)      (cosine)        extractive answer
+            line-item)
+```
+
+- **Field-aware chunking** ([chunking.py](src/invoice_iq/rag/chunking.py)) — each
+  invoice becomes self-contained `summary` / `vendor` / `line_item` chunks carrying
+  citation metadata (`doc_id`, `vendor`, `invoice_number`), which retrieve far
+  better than naive text splitting.
+- **`EmbeddingProvider`** ([embeddings.py](src/invoice_iq/rag/embeddings.py)) —
+  `SentenceTransformerEmbedder` (pinned **all-MiniLM-L6-v2**, real semantic vectors)
+  and a deterministic dependency-free `HashingEmbedder` for fast, hermetic tests.
+- **`VectorStore`** ([vector_store.py](src/invoice_iq/rag/vector_store.py)) —
+  Chroma (cosine space), in-memory by default or persistent on disk.
+- **`RAGPipeline`** ([qa.py](src/invoice_iq/rag/qa.py)) — index invoices, then
+  `ask("How much do we owe Acme Corp?")` retrieves the right document and returns an
+  **extractive answer with cited sources**. The Phase 5 agent adds LLM synthesis on
+  top of these same retrieved chunks.
+
+The **headline test** proves real MiniLM retrieval pulls the correct invoice and the
+answer contains the expected total. The pinned model (~80 MB) downloads once on
+first use and is cached (CI caches `~/.cache/huggingface`).
+
+> **Local note (this machine only):** model downloads go through a TLS-intercepting
+> proxy, so `.\tasks.ps1` points `SSL_CERT_FILE` at the exported Windows CA bundle.
+> On a normal machine / CI this is a no-op.
 
 ---
 
