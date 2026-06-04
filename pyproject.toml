@@ -12,16 +12,19 @@ license = { text = "MIT" }
 authors = [{ name = "Siddhant Jadhav", email = "siddhant823jadhav@gmail.com" }]
 keywords = ["mlops", "vertex-ai", "rag", "langgraph", "pytorch", "document-ai", "fastapi"]
 
-# Runtime dependencies are intentionally empty in Phase 0.
-# Each phase adds its pinned deps here (and into requirements.txt):
-#   Phase 1: pydantic, pydantic-settings
+# Runtime dependencies grow per phase (mirrored in requirements.txt):
+#   Phase 1: pydantic, pydantic-settings  [done]
 #   Phase 2: pdfplumber, pymupdf, pytesseract, reportlab, anthropic (optional path)
 #   Phase 3: torch, scikit-learn, numpy
 #   Phase 4: sentence-transformers, chromadb
 #   Phase 5: langgraph, langchain-core
 #   Phase 6: fastapi, uvicorn
 #   Phase 8: streamlit
-dependencies = []
+dependencies = [
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.1",
+    "email-validator==2.3.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -56,6 +59,7 @@ select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM", "ANN"]
 
 [tool.mypy]
 python_version = "3.11"
+plugins = ["pydantic.mypy"]
 strict = true
 warn_unused_configs = true
 warn_redundant_casts = true
@@ -63,7 +67,7 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 no_implicit_optional = true
 show_error_codes = true
-files = ["src", "tests"]
+files = ["src", "tests", "config", "scripts"]
 
 [[tool.mypy.overrides]]
 # Third-party libs without type stubs are added here per phase as needed.
@@ -74,7 +78,7 @@ ignore_missing_imports = true
 minversion = "8.0"
 addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "gcp: marks tests that require GCP credentials (skipped in CI by default)",

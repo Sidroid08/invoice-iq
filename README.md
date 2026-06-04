@@ -52,7 +52,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | Phase | Component | Status |
 |------:|-----------|--------|
 | 0 | Scaffold + guardrails (tooling, CI, venv) | done |
-| 1 | Pydantic schemas | planned |
+| 1 | Pydantic schemas + typed settings | done |
 | 2 | Ingestion + extraction (local) | planned |
 | 3 | PyTorch classifier (trained) | planned |
 | 4 | RAG pipeline | planned |
@@ -60,6 +60,28 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 6 | FastAPI serving + monitoring + Docker/CI | planned |
 | 7 | GCP swap-ins (Vertex endpoint first) | planned |
 | 8 | Streamlit demo + recruiter packaging | planned |
+
+---
+
+## Data model (the typed spine)
+
+Every stage exchanges **validated Pydantic v2 models** — never raw dicts. Core
+contracts (in [`src/invoice_iq/schemas`](src/invoice_iq/schemas)):
+
+| Model | Role | Key guarantees |
+|-------|------|----------------|
+| `DocumentType` | Class label | `invoice` / `receipt` / `contract` / `unknown` |
+| `RawDocument` | Pipeline input | non-blank filename, stable `doc_id`, `extra="forbid"` |
+| `OCRResult` | OCR output | non-empty text, per-page list, confidence ∈ [0,1] |
+| `Money` | Value object | `Decimal` (never float), 2dp, ISO-4217 currency, **frozen** |
+| `LineItem` | Billed line | enforces `quantity × unit_price == line_total` |
+| `Vendor` | Issuer | validated email (`EmailStr`) |
+| `Invoice` | Extraction output | currency consistency, **subtotal = Σ lines**, **total = subtotal + tax**, `due_date ≥ invoice_date` |
+
+A constructed `Invoice` is guaranteed *internally consistent*, not merely
+well-typed — the reconciliation rules live in the model validators. Configuration
+is a single typed [`Settings`](config/settings.py) object (pydantic-settings) with
+local-first defaults and opt-in GCP/LLM paths.
 
 ---
 

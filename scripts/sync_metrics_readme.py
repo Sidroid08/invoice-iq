@@ -52,9 +52,9 @@ def _render_metrics(metrics: dict[str, object]) -> str:
     trained_at = metrics.get("trained_at")
 
     headline_bits = []
-    if isinstance(acc, (int, float)):
+    if isinstance(acc, int | float):
         headline_bits.append(f"**Accuracy:** {acc:.1%}")
-    if isinstance(f1, (int, float)):
+    if isinstance(f1, int | float):
         headline_bits.append(f"**Macro-F1:** {f1:.3f}")
     if isinstance(n_test, int):
         headline_bits.append(f"**Test samples:** {n_test}")
@@ -69,8 +69,8 @@ def _render_metrics(metrics: dict[str, object]) -> str:
         sep = "|" + "---|" * (len(labels) + 1)
         lines.append(header)
         lines.append(sep)
-        for label, row in zip(labels, cm):
-            cells = " | ".join(str(v) for v in row)  # type: ignore[union-attr]
+        for label, row in zip(labels, cm, strict=False):
+            cells = " | ".join(str(v) for v in row)
             lines.append(f"| **{label}** | {cells} |")
         lines.append("")
 
@@ -87,10 +87,7 @@ def main() -> int:
 
     readme = README_PATH.read_text(encoding="utf-8")
     if START not in readme or END not in readme:
-        print(
-            "[sync-metrics] markers not found in README "
-            f"({START!r} / {END!r}); skipping."
-        )
+        print("[sync-metrics] markers not found in README " f"({START!r} / {END!r}); skipping.")
         return 0
 
     if METRICS_PATH.exists():
