@@ -10,7 +10,7 @@
 #>
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('help', 'install', 'lint', 'format', 'type', 'test', 'check', 'serve', 'docker-build', 'docker-up', 'sync-metrics', 'clean')]
+    [ValidateSet('help', 'install', 'lint', 'format', 'type', 'test', 'check', 'demo', 'serve', 'docker-build', 'docker-up', 'sync-metrics', 'clean')]
     [string]$Task = 'help'
 )
 
@@ -38,24 +38,25 @@ function Invoke-Step($cmd) {
 
 switch ($Task) {
     'help' {
-        Write-Host "Tasks: install | lint | format | type | test | check | serve | docker-build | docker-up | sync-metrics | clean"
+        Write-Host "Tasks: install | lint | format | type | test | check | demo | serve | docker-build | docker-up | sync-metrics | clean"
     }
     'install' {
         Invoke-Step "& '$py' -m pip install --upgrade pip"
         Invoke-Step "& '$py' -m pip install -e '.[dev]'"
     }
-    'lint'   { Invoke-Step "& '$py' -m ruff check src tests" }
+    'lint'   { Invoke-Step "& '$py' -m ruff check src tests scripts" }
     'format' {
-        Invoke-Step "& '$py' -m ruff format src tests"
-        Invoke-Step "& '$py' -m ruff check --fix src tests"
+        Invoke-Step "& '$py' -m ruff format src tests scripts"
+        Invoke-Step "& '$py' -m ruff check --fix src tests scripts"
     }
     'type'   { Invoke-Step "& '$py' -m mypy" }
     'test'   { Invoke-Step "& '$py' -m pytest" }
     'check'  {
-        Invoke-Step "& '$py' -m ruff check src tests"
+        Invoke-Step "& '$py' -m ruff check src tests scripts"
         Invoke-Step "& '$py' -m mypy"
         Invoke-Step "& '$py' -m pytest"
     }
+    'demo' { Invoke-Step "& '$py' scripts/demo.py" }
     'serve' {
         Invoke-Step "& '$py' -m uvicorn invoice_iq.serving.app:create_app --factory --host 0.0.0.0 --port 8000 --reload"
     }

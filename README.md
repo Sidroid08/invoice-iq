@@ -14,7 +14,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 
 ---
 
-## Architecture (target)
+## Architecture
 
 ```
                          ┌──────────────────────────────────────────┐
@@ -42,8 +42,8 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
                          └──────────────────────────────────────────┘
 ```
 
-> The diagram describes the target system. Components light up as phases land — see
-> **Build status** below.
+> The local system is implemented end-to-end. GCP swap-ins are present behind
+> explicit provider flags and remain cost-gated.
 
 ---
 
@@ -59,7 +59,56 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 5 | Agentic LangGraph workflow | done |
 | 6 | FastAPI serving + monitoring + Docker/CI | done |
 | 7 | GCP swap-ins (Vertex endpoint first) | gated |
-| 8 | Streamlit demo + recruiter packaging | planned |
+| 8 | Demo script + recruiter packaging | done |
+
+---
+
+## Skills demonstrated
+
+| Requirement | Where it shows up |
+|-------------|-------------------|
+| Document AI / OCR pipelines | Provider-backed PDF ingestion with local OCR and gated Document AI swap-in |
+| Structured extraction | Pydantic `Invoice` contract plus deterministic and optional LLM extractors |
+| Model training + MLOps | Real PyTorch classifier, checkpointing, metrics sync, CI retraining tests |
+| RAG | Field-aware chunking, MiniLM embeddings, Chroma retrieval, cited answers |
+| Agentic orchestration | LangGraph state machine with typed tools and conditional routing |
+| Production serving | FastAPI endpoints, Docker image, metrics, request/error tracking |
+| Cloud readiness | Gated Vertex AI classifier/embedding clients and no-execute deployment plan |
+| Engineering quality | Strict mypy, ruff, pytest, local/CI parity, no secrets committed |
+
+---
+
+## Five-minute demo
+
+This path is fully local and needs no cloud credentials. If `models/classifier.pt`
+is absent, the demo trains a tiny in-memory classifier so a fresh clone still runs.
+
+```bash
+# Install once
+pip install torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[dev]"
+
+# Run the end-to-end demo over the committed sample invoice
+python scripts/demo.py
+```
+
+Windows shortcut:
+
+```powershell
+.\tasks.ps1 demo
+```
+
+Expected flow:
+
+```
+PDF -> OCR -> PyTorch classify -> invoice extract -> RAG answer -> LangGraph recommendation
+```
+
+For a JSON version suitable for a screen-share or script:
+
+```bash
+python scripts/demo.py --json
+```
 
 ---
 
@@ -298,6 +347,21 @@ approval step.
 
 ---
 
+## Design decisions
+
+- **Local-first before cloud:** every paid or credentialed provider is behind a
+  protocol and an env flag; the default path is free and CI-safe.
+- **Validation as a boundary:** Pydantic models carry business rules, not just
+  shapes, so bad totals or date orderings fail before serving or retrieval.
+- **Synthetic but honest data:** the classifier proves the train/evaluate/serve
+  path over generated PDFs and reports that scope plainly in the README.
+- **Fast tests, real paths:** unit tests use hashing embeddings and in-memory
+  stores, while one slow MiniLM test proves the real semantic retrieval path.
+- **Gated cloud deployment:** Phase 7 code can print reviewable commands, but
+  live `gcloud` execution remains a manual, cost-reviewed step.
+
+---
+
 ## Setup
 
 Requires **Python 3.11** (pinned via `.python-version`).
@@ -333,6 +397,7 @@ All configuration is via environment variables; copy `.env.example` to `.env` an
 | Type-check | `make type` | `.\tasks.ps1 type` |
 | Test | `make test` | `.\tasks.ps1 test` |
 | Full gate (lint+type+test) | `make check` | `.\tasks.ps1 check` |
+| Demo | `make demo` | `.\tasks.ps1 demo` |
 | Run API | `make serve` | `.\tasks.ps1 serve` |
 | Docker build | `make docker-build` | `.\tasks.ps1 docker-build` |
 | Docker compose | `make docker-up` | `.\tasks.ps1 docker-up` |
@@ -349,7 +414,7 @@ See [PLAN.md](PLAN.md) for the full structure and phased plan. Key directories:
 ```
 src/invoice_iq/   # the package (schemas, ingestion, extraction, classifier, rag, agent, serving)
 tests/            # pytest suite (one module per component)
-scripts/          # synthetic-data generator, metrics sync, demo
+scripts/          # synthetic-data generator, metrics sync, one-command demo
 Dockerfile        # non-root API image; trains a local classifier during build
 docker-compose.yml # API service + persistent Chroma/Hugging Face cache volumes
 .github/workflows # CI: ruff + mypy + pytest on Python 3.11
