@@ -54,7 +54,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 0 | Scaffold + guardrails (tooling, CI, venv) | done |
 | 1 | Pydantic schemas + typed settings | done |
 | 2 | Ingestion + extraction (local) | done |
-| 3 | PyTorch classifier (trained) | planned |
+| 3 | PyTorch classifier (trained) | done |
 | 4 | RAG pipeline | planned |
 | 5 | Agentic LangGraph workflow | planned |
 | 6 | FastAPI serving + monitoring + Docker/CI | planned |
@@ -119,10 +119,46 @@ Tiny committed samples live in [`data/samples/`](data/samples) for the demo.
 
 ---
 
+## Document classifier (Phase 3)
+
+A **genuinely trained PyTorch** model classifies document text into
+`invoice` / `receipt` / `contract`. It is a fastText-style classifier — a learned
+`nn.EmbeddingBag` (mean-pooled token embeddings) → linear layer — trained with
+Adam + cross-entropy ([model.py](src/invoice_iq/classifier/model.py),
+[train.py](src/invoice_iq/classifier/train.py)). Metrics (accuracy, macro-F1,
+confusion matrix) are computed in pure numpy and written to `models/metrics.json`,
+which is auto-synced into the section below.
+
+```bash
+python -m invoice_iq.classifier.train --epochs 20 --out models   # train + write metrics.json
+python scripts/sync_metrics_readme.py                            # refresh README metrics
+```
+
+The model is evaluated on a **held-out test set generated with a different RNG
+seed** than training (no leakage). End-to-end at inference: `PDF → OCR → classifier
+→ DocumentType`. The test-suite trains a small model on every run and asserts it
+**beats the 1/3 random baseline by a wide margin** — no stubbing.
+
+> **Scope honesty:** training/eval data is *synthetic* (the Phase 2 generator), and
+> the three classes have distinct vocabularies, so the model separates them cleanly
+> (hence the perfect score below). The value demonstrated is the **end-to-end MLOps
+> path** — train → checkpoint → metrics → serve — not a hard NLP benchmark. The same
+> pipeline accepts real labelled PDFs by swapping the data source.
+
+---
+
 ## Classifier metrics
 
 <!-- METRICS:START -->
-_Classifier not trained yet. Run the Phase 3 training (`python -m invoice_iq.classifier.train`) to populate this section._
+**Accuracy:** 100.0% &nbsp;|&nbsp; **Macro-F1:** 1.000 &nbsp;|&nbsp; **Test samples:** 120
+
+| actual \ pred | invoice | receipt | contract |
+|---|---|---|---|
+| **invoice** | 40 | 0 | 0 |
+| **receipt** | 0 | 40 | 0 |
+| **contract** | 0 | 0 | 40 |
+
+_Last trained: 2026-06-04T18:05:38+00:00_
 <!-- METRICS:END -->
 
 > This block is auto-generated from `models/metrics.json` by
@@ -144,6 +180,8 @@ python3.11 -m venv .venv
 #   macOS / Linux:         source .venv/bin/activate
 
 # 3. Install the project + dev tooling
+#    Install the CPU-only PyTorch first to avoid the large CUDA wheel:
+pip install torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[dev]"
 
 # 4. Configure environment

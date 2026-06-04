@@ -26,6 +26,8 @@ dependencies = [
     "email-validator==2.3.0",
     "pdfplumber==0.11.9",
     "reportlab==4.5.1",
+    "torch==2.12.0",
+    "numpy==2.4.6",
 ]
 
 [project.optional-dependencies]

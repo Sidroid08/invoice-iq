@@ -1,0 +1,42 @@
+{
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "per_class_f1": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "confusion_matrix": [
+    [
+      40,
+      0,
+      0
+    ],
+    [
+      0,
+      40,
+      0
+    ],
+    [
+      0,
+      0,
+      40
+    ]
+  ],
+  "n_test": 120,
+  "labels": [
+    "invoice",
+    "receipt",
+    "contract"
+  ],
+  "trained_at": "2026-06-04T18:05:38+00:00",
+  "config": {
+    "n_train_per_class": 80,
+    "n_test_per_class": 40,
+    "epochs": 20,
+    "embed_dim": 64,
+    "lr": 0.01,
+    "batch_size": 16,
+    "seed": 42
+  }
+}
