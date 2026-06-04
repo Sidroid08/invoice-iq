@@ -58,7 +58,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 4 | RAG pipeline (embed + Chroma + Q&A) | done |
 | 5 | Agentic LangGraph workflow | done |
 | 6 | FastAPI serving + monitoring + Docker/CI | done |
-| 7 | GCP swap-ins (Vertex endpoint first) | planned |
+| 7 | GCP swap-ins (Vertex endpoint first) | gated |
 | 8 | Streamlit demo + recruiter packaging | planned |
 
 ---
@@ -256,6 +256,45 @@ make docker-up
 
 Windows equivalents: `.\tasks.ps1 serve`, `.\tasks.ps1 docker-build`, and
 `.\tasks.ps1 docker-up`.
+
+---
+
+## GCP swap-ins (Phase 7, gated)
+
+Phase 7 adds the cloud-facing adapters without changing the local default path.
+No GCP command runs from the app or tests unless you explicitly set the provider
+flags and provide Google credentials.
+
+| Flag | Local default | GCP adapter |
+|------|---------------|-------------|
+| `CLASSIFIER_BACKEND` | `local` PyTorch checkpoint | `vertex` via `VertexClassifierClient` |
+| `OCR_PROVIDER` | `local` pdfplumber | `gcp` via `DocAIOCRProvider` |
+| `EMBEDDING_PROVIDER` | `local` MiniLM | `gcp` via `VertexEmbedder` |
+| `VECTOR_STORE` | `local` Chroma | intentionally cost-gated until a Vector Search index is approved |
+
+Install the optional SDKs only when you are ready to configure live GCP:
+
+```bash
+pip install -e ".[gcp]"
+```
+
+The API image is also Vertex custom-container compatible through:
+
+- `GET /health` for health checks
+- `POST /predict` with `{"instances": [{"text": "..."}]}` for document-type predictions
+
+To review the Vertex deployment commands without executing them:
+
+```bash
+python -m invoice_iq.vertex.deploy_classifier \
+  --project YOUR_PROJECT \
+  --region us-central1 \
+  --image-uri us-central1-docker.pkg.dev/YOUR_PROJECT/invoice-iq/api:latest
+```
+
+That script prints commands only. Running the printed `gcloud` commands can create
+billable Vertex AI resources, so live deployment remains behind an explicit cost
+approval step.
 
 ---
 

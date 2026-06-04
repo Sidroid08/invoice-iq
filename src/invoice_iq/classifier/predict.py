@@ -4,12 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 import torch
 
 from invoice_iq.classifier.dataset import Vocabulary
 from invoice_iq.classifier.model import DocumentClassifier
 from invoice_iq.schemas.documents import DocumentType, OCRResult
+
+
+@runtime_checkable
+class DocumentTypePredictor(Protocol):
+    """Predicts document type from text or OCR output."""
+
+    def predict(self, text: str) -> tuple[DocumentType, float]: ...
+
+    def predict_ocr(self, ocr: OCRResult) -> tuple[DocumentType, float]: ...
 
 
 @dataclass

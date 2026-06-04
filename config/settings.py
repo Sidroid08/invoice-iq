@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     google_cloud_region: str = "us-central1"
     google_application_credentials: str | None = None
     vertex_classifier_endpoint_id: str | None = None
+    vertex_embedding_model: str = "text-embedding-005"
     docai_processor_id: str | None = None
 
     # --- Serving (Phase 6) ---

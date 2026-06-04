@@ -8,7 +8,7 @@ from pathlib import Path
 from config.settings import Settings, get_settings
 
 from invoice_iq.agent import AgentDeps
-from invoice_iq.classifier import Predictor, load_classifier
+from invoice_iq.classifier import DocumentTypePredictor, load_classifier
 from invoice_iq.classifier.train import CHECKPOINT_NAME
 from invoice_iq.extraction import RuleBasedExtractor
 from invoice_iq.extraction.base import Extractor
@@ -25,7 +25,7 @@ class AppDeps:
     """All service dependencies, injectable for tests and swappable for Phase 7."""
 
     settings: Settings
-    predictor: Predictor
+    predictor: DocumentTypePredictor
     extractor: Extractor
     rag: RAGPipeline
     ocr_provider: OCRProvider = field(default_factory=LocalOCRProvider)
@@ -41,11 +41,6 @@ class AppDeps:
         )
 
 
-def _require_local(name: str, value: str) -> None:
-    if value != "local":
-        raise NotImplementedError(f"{name}={value!r} is reserved for the Phase 7 GCP swap-in")
-
-
 def _build_extractor(settings: Settings) -> Extractor:
     if settings.llm_extraction_ready:
         from invoice_iq.extraction.llm_extractor import LLMExtractor  # noqa: PLC0415
@@ -54,10 +49,44 @@ def _build_extractor(settings: Settings) -> Extractor:
     return RuleBasedExtractor()
 
 
+def _build_ocr_provider(settings: Settings) -> OCRProvider:
+    if settings.ocr_provider == "local":
+        return LocalOCRProvider()
+    from invoice_iq.ingestion.docai import DocAIOCRProvider  # noqa: PLC0415
+
+    return DocAIOCRProvider.from_settings(settings)
+
+
+def _build_embedder(settings: Settings) -> EmbeddingProvider:
+    if settings.embedding_provider == "local":
+        return SentenceTransformerEmbedder(settings.embedding_model)
+    from invoice_iq.vertex import VertexEmbedder  # noqa: PLC0415
+
+    return VertexEmbedder.from_settings(settings)
+
+
+def _build_store(settings: Settings) -> VectorStore:
+    if settings.vector_store == "local":
+        return ChromaVectorStore(persist_dir=Path(settings.chroma_dir))
+    raise NotImplementedError(
+        "VECTOR_STORE='gcp' requires a Vertex Vector Search index and is gated "
+        "behind explicit Phase 7 cost approval. Leave VECTOR_STORE=local to use Chroma."
+    )
+
+
+def _build_predictor(settings: Settings) -> DocumentTypePredictor:
+    if settings.classifier_backend == "local":
+        checkpoint = Path(settings.model_dir) / CHECKPOINT_NAME
+        return load_classifier(checkpoint)
+    from invoice_iq.vertex import VertexClassifierClient  # noqa: PLC0415
+
+    return VertexClassifierClient.from_settings(settings)
+
+
 def build_app_deps(
     settings: Settings | None = None,
     *,
-    predictor: Predictor | None = None,
+    predictor: DocumentTypePredictor | None = None,
     extractor: Extractor | None = None,
     embedder: EmbeddingProvider | None = None,
     store: VectorStore | None = None,
@@ -68,23 +97,15 @@ def build_app_deps(
     loads the trained checkpoint from `MODEL_DIR/classifier.pt`.
     """
     settings = settings or get_settings()
-    _require_local("OCR_PROVIDER", settings.ocr_provider)
-    _require_local("EMBEDDING_PROVIDER", settings.embedding_provider)
-    _require_local("VECTOR_STORE", settings.vector_store)
-    if settings.classifier_backend != "local":
-        raise NotImplementedError(
-            "CLASSIFIER_BACKEND='vertex' is reserved for the Phase 7 Vertex endpoint swap-in"
-        )
-
-    if predictor is None:
-        checkpoint = Path(settings.model_dir) / CHECKPOINT_NAME
-        predictor = load_classifier(checkpoint)
+    ocr_provider = _build_ocr_provider(settings)
+    predictor = predictor or _build_predictor(settings)
     extractor = extractor or _build_extractor(settings)
-    embedder = embedder or SentenceTransformerEmbedder(settings.embedding_model)
-    store = store or ChromaVectorStore(persist_dir=Path(settings.chroma_dir))
+    embedder = embedder or _build_embedder(settings)
+    store = store or _build_store(settings)
     return AppDeps(
         settings=settings,
         predictor=predictor,
         extractor=extractor,
         rag=RAGPipeline(embedder, store),
+        ocr_provider=ocr_provider,
     )

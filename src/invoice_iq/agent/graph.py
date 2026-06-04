@@ -22,7 +22,7 @@ from langgraph.graph import END, StateGraph
 
 from invoice_iq.agent import tools
 from invoice_iq.agent.state import AgentResult, AgentState, NextAction
-from invoice_iq.classifier.predict import Predictor
+from invoice_iq.classifier.predict import DocumentTypePredictor
 from invoice_iq.extraction.base import ExtractionError, Extractor
 from invoice_iq.ingestion.base import OCRProvider
 from invoice_iq.ingestion.local_ocr import LocalOCRProvider, ingest_pdf
@@ -34,7 +34,7 @@ from invoice_iq.schemas.documents import DocumentType
 class AgentDeps:
     """Components the agent orchestrates (injected for testability)."""
 
-    predictor: Predictor
+    predictor: DocumentTypePredictor
     extractor: Extractor
     rag: RAGPipeline
     ocr_provider: OCRProvider = field(default_factory=LocalOCRProvider)

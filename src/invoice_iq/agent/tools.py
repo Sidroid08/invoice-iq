@@ -13,7 +13,7 @@ from decimal import Decimal
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, ConfigDict
 
-from invoice_iq.classifier.predict import Predictor
+from invoice_iq.classifier.predict import DocumentTypePredictor
 from invoice_iq.extraction.base import Extractor
 from invoice_iq.rag.qa import Answer, RAGPipeline
 from invoice_iq.schemas.documents import DocumentType, OCRResult
@@ -50,7 +50,9 @@ class _AnswerQuestionArgs(BaseModel):
     question: str
 
 
-def classify_document(predictor: Predictor, ocr: OCRResult) -> tuple[DocumentType, float]:
+def classify_document(
+    predictor: DocumentTypePredictor, ocr: OCRResult
+) -> tuple[DocumentType, float]:
     """Classify OCR'd text into a document type with a confidence score."""
     return predictor.predict_ocr(ocr)
 
@@ -100,7 +102,7 @@ def recommend_action(
 
 
 def build_structured_tools(
-    predictor: Predictor, extractor: Extractor, rag: RAGPipeline
+    predictor: DocumentTypePredictor, extractor: Extractor, rag: RAGPipeline
 ) -> list[StructuredTool]:
     """Expose the capabilities as langchain-core StructuredTools (for LLM-driven agents)."""
 

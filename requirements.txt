@@ -27,6 +27,7 @@ python-multipart==0.0.32
 # Phase 2 optional extras (NOT installed by default):
 #   OCR fallback (also needs Tesseract binary):  pip install -e ".[ocr]"
 #   LLM extraction path (needs ANTHROPIC_API_KEY): pip install -e ".[llm]"
+#   GCP swap-ins (cost-gated, needs Google auth): pip install -e ".[gcp]"
 #
 # Dev / tooling (install with: pip install -e ".[dev]"  OR  pip install -r requirements.txt)
 ruff==0.8.4

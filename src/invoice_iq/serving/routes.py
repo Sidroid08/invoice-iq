@@ -22,6 +22,9 @@ from invoice_iq.schemas.api import (
     ExtractionResponse,
     HealthResponse,
     IngestResponse,
+    Prediction,
+    PredictionRequest,
+    PredictionResponse,
 )
 from invoice_iq.serving.deps import AppDeps
 from invoice_iq.serving.monitoring import MetricsSnapshot
@@ -149,6 +152,18 @@ async def classify_endpoint(
         ocr_provider=ingested.ocr.provider,
         page_count=ingested.ocr.page_count,
     )
+
+
+@router.post("/predict", response_model=PredictionResponse)
+async def predict_endpoint(
+    payload: PredictionRequest, deps: Annotated[AppDeps, Depends(get_app_deps)]
+) -> PredictionResponse:
+    predictions: list[Prediction] = []
+    for instance in payload.instances:
+        document_type, confidence = deps.predictor.predict(instance.text)
+        deps.metrics.record_prediction(document_type)
+        predictions.append(Prediction(document_type=document_type, confidence=confidence))
+    return PredictionResponse(predictions=predictions)
 
 
 @router.post("/extract", response_model=ExtractionResponse)

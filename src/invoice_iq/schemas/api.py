@@ -44,6 +44,39 @@ class ClassificationResponse(BaseModel):
     page_count: int = Field(ge=0)
 
 
+class PredictionInstance(BaseModel):
+    """A text-only prediction instance for Vertex custom-container serving."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1)
+
+
+class PredictionRequest(BaseModel):
+    """Vertex-compatible custom-container predict request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    instances: list[PredictionInstance] = Field(min_length=1)
+
+
+class Prediction(BaseModel):
+    """One document-type prediction."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    document_type: DocumentType
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class PredictionResponse(BaseModel):
+    """Vertex-compatible custom-container predict response."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    predictions: list[Prediction]
+
+
 class ExtractionResponse(BaseModel):
     """Invoice extraction response."""
 

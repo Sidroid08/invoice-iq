@@ -87,6 +87,17 @@ def test_classify_invoice(client: TestClient, tmp_path: Path, valid_invoice: Inv
     assert body["page_count"] == 1
 
 
+def test_predict_vertex_container_contract(client: TestClient) -> None:
+    response = client.post(
+        "/predict",
+        json={"instances": [{"text": "INVOICE Invoice Number: INV-1 Total: 10.00"}]},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["predictions"][0]["document_type"] == "invoice"
+    assert 0.0 <= body["predictions"][0]["confidence"] <= 1.0
+
+
 def test_extract_invoice(client: TestClient, tmp_path: Path, valid_invoice: Invoice) -> None:
     response = client.post("/extract", files=_upload(_invoice_pdf(tmp_path, valid_invoice)))
     assert response.status_code == 200
