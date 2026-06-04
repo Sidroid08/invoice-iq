@@ -24,6 +24,8 @@ dependencies = [
     "pydantic==2.13.4",
     "pydantic-settings==2.14.1",
     "email-validator==2.3.0",
+    "pdfplumber==0.11.9",
+    "reportlab==4.5.1",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +34,15 @@ dev = [
     "mypy==1.13.0",
     "pytest==8.3.4",
     "pytest-cov==6.0.0",
+]
+# Scanned-PDF OCR fallback. Also requires the Tesseract system binary on PATH.
+ocr = [
+    "pymupdf==1.26.4",
+    "pytesseract==0.3.13",
+]
+# Optional LLM extraction path (off by default; needs ANTHROPIC_API_KEY).
+llm = [
+    "anthropic==0.69.0",
 ]
 
 [project.urls]
@@ -70,8 +81,8 @@ show_error_codes = true
 files = ["src", "tests", "config", "scripts"]
 
 [[tool.mypy.overrides]]
-# Third-party libs without type stubs are added here per phase as needed.
-module = []
+# Third-party libs without type stubs (treated as Any).
+module = ["pdfplumber.*", "reportlab.*", "fitz", "pytesseract", "anthropic.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

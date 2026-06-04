@@ -53,7 +53,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 |------:|-----------|--------|
 | 0 | Scaffold + guardrails (tooling, CI, venv) | done |
 | 1 | Pydantic schemas + typed settings | done |
-| 2 | Ingestion + extraction (local) | planned |
+| 2 | Ingestion + extraction (local) | done |
 | 3 | PyTorch classifier (trained) | planned |
 | 4 | RAG pipeline | planned |
 | 5 | Agentic LangGraph workflow | planned |
@@ -82,6 +82,40 @@ A constructed `Invoice` is guaranteed *internally consistent*, not merely
 well-typed — the reconciliation rules live in the model validators. Configuration
 is a single typed [`Settings`](config/settings.py) object (pydantic-settings) with
 local-first defaults and opt-in GCP/LLM paths.
+
+---
+
+## Ingestion + extraction (Phase 2)
+
+PDFs become validated `Invoice` JSON through two provider-backed stages, each
+behind a `Protocol` so a GCP swap-in is config, not a rewrite:
+
+```
+PDF ──► OCRProvider ──► OCRResult ──► Extractor ──► Invoice (validated)
+        local: pdfplumber            rule_based (default, deterministic)
+        gcp:   Document AI (P7)      llm: Claude API (opt-in)
+```
+
+- **`LocalOCRProvider`** ([ingestion/local_ocr.py](src/invoice_iq/ingestion/local_ocr.py)) —
+  pdfplumber text extraction; optional Tesseract fallback for scanned PDFs
+  (`[ocr]` extra, off by default — needs the Tesseract binary).
+- **`RuleBasedExtractor`** ([extraction/rule_based.py](src/invoice_iq/extraction/rule_based.py)) —
+  deterministic, dependency-free, **always-on default**; tests/CI never need a key.
+- **`LLMExtractor`** ([extraction/llm_extractor.py](src/invoice_iq/extraction/llm_extractor.py)) —
+  opt-in Claude-API path (structured tool-use) for messy layouts; enabled only
+  with `ENABLE_LLM_EXTRACTION=true` + `ANTHROPIC_API_KEY`.
+- **Synthetic data** ([synthetic.py](src/invoice_iq/synthetic.py)) — generates
+  realistic invoice/receipt/contract PDFs (the contrast classes for the Phase 3
+  classifier) and is the single source of truth for the on-page layout, so the
+  generator and extractor can't drift. Correctness is proven by a
+  **`Invoice → PDF → OCR → Invoice` round-trip test** over random invoices.
+
+```bash
+# Regenerate the labelled training corpus (gitignored output)
+python scripts/generate_synthetic_data.py --n 30 --out data/generated --seed 42
+```
+
+Tiny committed samples live in [`data/samples/`](data/samples) for the demo.
 
 ---
 
