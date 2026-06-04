@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = Field(default=8000, ge=1, le=65535)
     log_level: str = "INFO"
+    max_upload_mb: int = Field(default=10, ge=1, le=100)
 
     # --- Storage paths ---
     model_dir: str = "models"

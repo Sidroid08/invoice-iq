@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 PY := python
 
-.PHONY: help install lint format type test check sync-metrics clean
+.PHONY: help install lint format type test check serve docker-build docker-up sync-metrics clean
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -27,6 +27,15 @@ test:  ## Run pytest
 	pytest
 
 check: lint type test  ## Lint + type + test (the full CI gate)
+
+serve:  ## Run the FastAPI app locally
+	$(PY) -m uvicorn invoice_iq.serving.app:create_app --factory --host 0.0.0.0 --port 8000 --reload
+
+docker-build:  ## Build the API image (trains a local classifier inside the image)
+	docker build -t invoice-iq:local .
+
+docker-up:  ## Start the API with docker compose
+	docker compose up --build
 
 sync-metrics:  ## Inject models/metrics.json into the README (no-op until Phase 3)
 	$(PY) scripts/sync_metrics_readme.py

@@ -57,7 +57,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 3 | PyTorch classifier (trained) | done |
 | 4 | RAG pipeline (embed + Chroma + Q&A) | done |
 | 5 | Agentic LangGraph workflow | done |
-| 6 | FastAPI serving + monitoring + Docker/CI | planned |
+| 6 | FastAPI serving + monitoring + Docker/CI | done |
 | 7 | GCP swap-ins (Vertex endpoint first) | planned |
 | 8 | Streamlit demo + recruiter packaging | planned |
 
@@ -230,6 +230,35 @@ and extraction-failure review.
 
 ---
 
+## API serving (Phase 6)
+
+The local pipeline is served through FastAPI with dependency injection for every
+provider, so tests can use hermetic components while production loads the trained
+checkpoint from `models/classifier.pt`.
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Service status, provider wiring, vector count |
+| `POST /ingest` | Upload PDF -> `RawDocument` + `OCRResult` |
+| `POST /classify` | Upload PDF -> document type + confidence |
+| `POST /extract` | Upload invoice PDF -> validated `Invoice` |
+| `POST /ask` | Upload invoice PDF + question -> RAG answer with citations |
+| `POST /agent` | Upload PDF + optional question -> full LangGraph `AgentResult` |
+| `GET /metrics` | Latency, error-rate, endpoint, and prediction counters |
+
+```bash
+# Local API (requires models/classifier.pt; run the Phase 3 train command if absent)
+make serve
+
+# Container API (build trains a local classifier inside the image)
+make docker-up
+```
+
+Windows equivalents: `.\tasks.ps1 serve`, `.\tasks.ps1 docker-build`, and
+`.\tasks.ps1 docker-up`.
+
+---
+
 ## Setup
 
 Requires **Python 3.11** (pinned via `.python-version`).
@@ -265,6 +294,9 @@ All configuration is via environment variables; copy `.env.example` to `.env` an
 | Type-check | `make type` | `.\tasks.ps1 type` |
 | Test | `make test` | `.\tasks.ps1 test` |
 | Full gate (lint+type+test) | `make check` | `.\tasks.ps1 check` |
+| Run API | `make serve` | `.\tasks.ps1 serve` |
+| Docker build | `make docker-build` | `.\tasks.ps1 docker-build` |
+| Docker compose | `make docker-up` | `.\tasks.ps1 docker-up` |
 | Sync metrics → README | `make sync-metrics` | `.\tasks.ps1 sync-metrics` |
 
 Both runners execute identical commands; Windows has no `make`, so `tasks.ps1` mirrors it.
@@ -279,6 +311,8 @@ See [PLAN.md](PLAN.md) for the full structure and phased plan. Key directories:
 src/invoice_iq/   # the package (schemas, ingestion, extraction, classifier, rag, agent, serving)
 tests/            # pytest suite (one module per component)
 scripts/          # synthetic-data generator, metrics sync, demo
+Dockerfile        # non-root API image; trains a local classifier during build
+docker-compose.yml # API service + persistent Chroma/Hugging Face cache volumes
 .github/workflows # CI: ruff + mypy + pytest on Python 3.11
 ```
 

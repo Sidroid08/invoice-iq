@@ -12,9 +12,11 @@ htmlcov
 .env
 .env.*
 !.env.example
+.claude
 data/generated
 models/*.pt
 chroma
+win-ca-bundle.pem
 *.md
 !README.md
 PLAN.md

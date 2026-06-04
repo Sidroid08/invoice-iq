@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from invoice_iq.ingestion.base import PAGE_BREAK, build_raw_document
+from invoice_iq.ingestion.base import PAGE_BREAK, OCRProvider, build_raw_document
 from invoice_iq.schemas.documents import OCRResult, RawDocument
 
 # Below this many characters on a page, we treat the text layer as "missing"
@@ -69,7 +69,7 @@ class LocalOCRProvider:
 
 def ingest_pdf(
     pdf_path: Path,
-    provider: LocalOCRProvider | None = None,
+    provider: OCRProvider | None = None,
 ) -> tuple[RawDocument, OCRResult]:
     """Build the `RawDocument` and run OCR in one step.
 

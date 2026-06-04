@@ -10,7 +10,7 @@
 #>
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('help', 'install', 'lint', 'format', 'type', 'test', 'check', 'sync-metrics', 'clean')]
+    [ValidateSet('help', 'install', 'lint', 'format', 'type', 'test', 'check', 'serve', 'docker-build', 'docker-up', 'sync-metrics', 'clean')]
     [string]$Task = 'help'
 )
 
@@ -38,7 +38,7 @@ function Invoke-Step($cmd) {
 
 switch ($Task) {
     'help' {
-        Write-Host "Tasks: install | lint | format | type | test | check | sync-metrics | clean"
+        Write-Host "Tasks: install | lint | format | type | test | check | serve | docker-build | docker-up | sync-metrics | clean"
     }
     'install' {
         Invoke-Step "& '$py' -m pip install --upgrade pip"
@@ -56,6 +56,11 @@ switch ($Task) {
         Invoke-Step "& '$py' -m mypy"
         Invoke-Step "& '$py' -m pytest"
     }
+    'serve' {
+        Invoke-Step "& '$py' -m uvicorn invoice_iq.serving.app:create_app --factory --host 0.0.0.0 --port 8000 --reload"
+    }
+    'docker-build' { Invoke-Step "docker build -t invoice-iq:local ." }
+    'docker-up' { Invoke-Step "docker compose up --build" }
     'sync-metrics' { Invoke-Step "& '$py' scripts/sync_metrics_readme.py" }
     'clean' {
         foreach ($d in '.pytest_cache', '.mypy_cache', '.ruff_cache', 'htmlcov', 'build', 'dist') {

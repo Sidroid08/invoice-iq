@@ -46,7 +46,7 @@ def build_agent(deps: AgentDeps) -> object:
     """Build and compile the LangGraph agent for the given dependencies."""
 
     def classify_node(state: AgentState) -> dict[str, object]:
-        raw, ocr = ingest_pdf(Path(state["pdf_path"]), deps.ocr_provider)  # type: ignore[arg-type]
+        raw, ocr = ingest_pdf(Path(state["pdf_path"]), deps.ocr_provider)
         doc_type, confidence = tools.classify_document(deps.predictor, ocr)
         return {
             "raw_document": raw,

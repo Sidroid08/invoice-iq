@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    image: invoice-iq:local
+    ports:
+      - "8000:8000"
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      MODEL_DIR: /app/models
+      CHROMA_DIR: /app/chroma
+      LOG_LEVEL: INFO
+    volumes:
+      - chroma-data:/app/chroma
+      - hf-cache:/home/appuser/.cache/huggingface
+
+volumes:
+  chroma-data:
+  hf-cache:
