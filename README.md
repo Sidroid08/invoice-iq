@@ -56,7 +56,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 2 | Ingestion + extraction (local) | done |
 | 3 | PyTorch classifier (trained) | done |
 | 4 | RAG pipeline (embed + Chroma + Q&A) | done |
-| 5 | Agentic LangGraph workflow | planned |
+| 5 | Agentic LangGraph workflow | done |
 | 6 | FastAPI serving + monitoring + Docker/CI | planned |
 | 7 | GCP swap-ins (Vertex endpoint first) | planned |
 | 8 | Streamlit demo + recruiter packaging | planned |
@@ -200,6 +200,33 @@ first use and is cached (CI caches `~/.cache/huggingface`).
 > **Local note (this machine only):** model downloads go through a TLS-intercepting
 > proxy, so `.\tasks.ps1` points `SSL_CERT_FILE` at the exported Windows CA bundle.
 > On a normal machine / CI this is a no-op.
+
+---
+
+## Agentic workflow (Phase 5)
+
+The LangGraph agent composes the local pipeline into one typed, testable workflow:
+
+```
+PDF -> ingest/OCR -> classify -> extract invoice -> optional RAG answer -> recommend
+                         |              |
+                         |              +-> review on extraction/validation errors
+                         +-> route non-invoices to their own workflow
+```
+
+- **Typed state** ([state.py](src/invoice_iq/agent/state.py)) - `AgentState`
+  captures graph inputs, intermediate artifacts, trace events, and accumulated
+  errors; `AgentResult` is the final Pydantic response contract.
+- **Tool layer** ([tools.py](src/invoice_iq/agent/tools.py)) - deterministic
+  classify/extract/answer/recommend functions plus `StructuredTool` wrappers for
+  a future LLM-driven variant.
+- **Graph orchestration** ([graph.py](src/invoice_iq/agent/graph.py)) - conditional
+  edges skip extraction for non-invoices, skip answering when no question is asked,
+  and route failed or high-value invoices to human review.
+
+The Phase 5 tests run the real graph end-to-end on generated PDFs, including the
+invoice + question path, no-question path, non-invoice routing, high-value review,
+and extraction-failure review.
 
 ---
 

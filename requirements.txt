@@ -17,6 +17,9 @@ numpy==2.4.6
 # embedding model all-MiniLM-L6-v2 (~80 MB) to ~/.cache/huggingface.
 sentence-transformers==5.5.1
 chromadb==1.5.9
+# Phase 5: agentic orchestration
+langgraph==1.2.4
+langchain-core==1.4.0
 # Phase 2 optional extras (NOT installed by default):
 #   OCR fallback (also needs Tesseract binary):  pip install -e ".[ocr]"
 #   LLM extraction path (needs ANTHROPIC_API_KEY): pip install -e ".[llm]"
