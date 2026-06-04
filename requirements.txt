@@ -1,0 +1,10 @@
+# Pinned dependency mirror of pyproject.toml for pip users.
+# Source of truth is pyproject.toml; keep these in sync.
+#
+# Runtime deps are added per phase (see pyproject.toml comments). Phase 0 has none.
+#
+# Dev / tooling (install with: pip install -e ".[dev]"  OR  pip install -r requirements.txt)
+ruff==0.8.4
+mypy==1.13.0
+pytest==8.3.4
+pytest-cov==6.0.0

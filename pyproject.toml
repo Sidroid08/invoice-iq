@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "invoice-iq"
+version = "0.1.0"
+description = "Invoice Intelligence Platform — Document AI extraction, RAG, agentic LangGraph orchestration, a trained PyTorch classifier, and FastAPI serving with full MLOps."
+readme = "README.md"
+requires-python = "==3.11.*"
+license = { text = "MIT" }
+authors = [{ name = "Siddhant Jadhav", email = "siddhant823jadhav@gmail.com" }]
+keywords = ["mlops", "vertex-ai", "rag", "langgraph", "pytorch", "document-ai", "fastapi"]
+
+# Runtime dependencies are intentionally empty in Phase 0.
+# Each phase adds its pinned deps here (and into requirements.txt):
+#   Phase 1: pydantic, pydantic-settings
+#   Phase 2: pdfplumber, pymupdf, pytesseract, reportlab, anthropic (optional path)
+#   Phase 3: torch, scikit-learn, numpy
+#   Phase 4: sentence-transformers, chromadb
+#   Phase 5: langgraph, langchain-core
+#   Phase 6: fastapi, uvicorn
+#   Phase 8: streamlit
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "pytest==8.3.4",
+    "pytest-cov==6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Sidroid08/invoice-iq"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# --------------------------------------------------------------------------- #
+# Tooling configuration
+# --------------------------------------------------------------------------- #
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort, UP: pyupgrade, B: bugbear,
+# C4: comprehensions, SIM: simplify, ANN: annotations
+select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM", "ANN"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN"]  # tests don't require full type annotations
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+# Third-party libs without type stubs are added here per phase as needed.
+module = []
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gcp: marks tests that require GCP credentials (skipped in CI by default)",
+]
+
+[tool.coverage.run]
+source = ["src/invoice_iq"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
