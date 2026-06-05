@@ -59,7 +59,7 @@ system is green. See [PLAN.md](PLAN.md) for the full build plan.
 | 5 | Agentic LangGraph workflow | done |
 | 6 | FastAPI serving + monitoring + Docker/CI | done |
 | 7 | GCP swap-ins (Vertex endpoint first) | gated |
-| 8 | Demo script + recruiter packaging | done |
+| 8 | Demo (CLI + Streamlit UI) + recruiter packaging | done |
 
 ---
 
@@ -109,6 +109,27 @@ For a JSON version suitable for a screen-share or script:
 ```bash
 python scripts/demo.py --json
 ```
+
+### Clickable demo (Streamlit)
+
+For an interview screen-share, a Streamlit UI drives the same pipeline through the
+**live API** — upload a PDF and watch **classify → extract → ask → recommend**:
+
+```bash
+pip install -e ".[demo]"
+uvicorn invoice_iq.serving.app:create_app --factory     # terminal 1 — the API
+streamlit run src/invoice_iq/ui/app.py                  # terminal 2 — UI at http://localhost:8501
+```
+
+Or run the whole thing in containers (API **and** UI):
+
+```bash
+docker compose up --build      # API on :8000, Streamlit UI on :8501
+```
+
+The UI is a thin client over the FastAPI `/agent` endpoint
+([ui/app.py](src/invoice_iq/ui/app.py), [ui/client.py](src/invoice_iq/ui/client.py)) —
+set `INVOICE_IQ_API_URL` to target a non-default API location.
 
 ---
 
@@ -194,9 +215,8 @@ seed** than training (no leakage). End-to-end at inference: `PDF → OCR → cla
 > path** — train → checkpoint → metrics → serve — not a hard NLP benchmark. The same
 > pipeline accepts real labelled PDFs by swapping the data source.
 
----
-
-## Classifier metrics
+**Metrics** — auto-generated from `models/metrics.json` (real, last-trained run).
+Read the perfect score with the scope note directly above in mind:
 
 <!-- METRICS:START -->
 **Accuracy:** 100.0% &nbsp;|&nbsp; **Macro-F1:** 1.000 &nbsp;|&nbsp; **Test samples:** 120
@@ -210,9 +230,8 @@ seed** than training (no leakage). End-to-end at inference: `PDF → OCR → cla
 _Last trained: 2026-06-04T18:05:38+00:00_
 <!-- METRICS:END -->
 
-> This block is auto-generated from `models/metrics.json` by
-> `scripts/sync_metrics_readme.py` (run in CI), so the numbers shown are the real,
-> last-trained results — never hand-edited.
+> The block above is rewritten by `scripts/sync_metrics_readme.py` (run in CI) —
+> never hand-edited.
 
 ---
 
@@ -412,11 +431,11 @@ Both runners execute identical commands; Windows has no `make`, so `tasks.ps1` m
 See [PLAN.md](PLAN.md) for the full structure and phased plan. Key directories:
 
 ```
-src/invoice_iq/   # the package (schemas, ingestion, extraction, classifier, rag, agent, serving)
+src/invoice_iq/   # the package (schemas, ingestion, extraction, classifier, rag, agent, serving, ui)
 tests/            # pytest suite (one module per component)
 scripts/          # synthetic-data generator, metrics sync, one-command demo
-Dockerfile        # non-root API image; trains a local classifier during build
-docker-compose.yml # API service + persistent Chroma/Hugging Face cache volumes
+Dockerfile        # non-root image (API + Streamlit); trains a local classifier during build
+docker-compose.yml # api + ui (Streamlit) services + persistent Chroma/HF cache volumes
 .github/workflows # CI: ruff + mypy + pytest on Python 3.11
 ```
 

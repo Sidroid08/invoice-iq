@@ -14,6 +14,23 @@ services:
       - chroma-data:/app/chroma
       - hf-cache:/home/appuser/.cache/huggingface
 
+  # Streamlit demo UI — talks to the api service over HTTP (same image).
+  ui:
+    image: invoice-iq:local
+    build: .
+    command:
+      - streamlit
+      - run
+      - src/invoice_iq/ui/app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0
+    environment:
+      INVOICE_IQ_API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
 volumes:
   chroma-data:
   hf-cache:

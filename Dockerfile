@@ -13,10 +13,11 @@ COPY config ./config
 COPY scripts ./scripts
 COPY src ./src
 COPY models/metrics.json ./models/metrics.json
+COPY data/samples ./data/samples
 
 RUN python -m pip install --upgrade pip \
     && python -m pip install torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu \
-    && python -m pip install -e .
+    && python -m pip install -e '.[demo]'
 
 RUN python -m invoice_iq.classifier.train --epochs 20 --out models
 
@@ -25,6 +26,6 @@ RUN useradd --create-home --shell /usr/sbin/nologin appuser \
     && chown -R appuser:appuser /app /home/appuser
 
 USER appuser
-EXPOSE 8000
+EXPOSE 8000 8501
 
 CMD ["sh", "-c", "python -m uvicorn invoice_iq.serving.app:create_app --factory --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8000}"]
